@@ -29,7 +29,7 @@ func main() {
 	if err != nil {
 		hasFile = false
 	}
-	var dirName string
+	var dirName []string
 	if !hasFile {
 		dirName, err = getDirectoryName(cmds[1:], matcher)
 		if err != nil {
@@ -45,8 +45,8 @@ func main() {
 	if err != nil {
 		hasPara = false
 	}
-	// fmt.Println("Directory", dirName)
-	// fmt.Println("Filename", fileName)
+	fmt.Println("Directory", dirName)
+	fmt.Println("Filename", fileName)
 	// fmt.Println("Parameters", para, hasPara)
 
 	if hasFile && !hasPara {
@@ -72,7 +72,7 @@ func main() {
 	// }
 }
 
-func traverseAndPrint(dir string, para []string) error {
+func traverseAndPrint(dir []string, para []string) error {
 	return nil
 }
 
@@ -118,7 +118,7 @@ func getCommands(cmds []string) ([]string, error) {
 
 func getMatchingString(cmds []string) (string, error) {
 	for _, r := range cmds {
-		if !strings.Contains(r, "-") || !strings.Contains(r, ".txt") {
+		if !strings.Contains(r, "-") && !strings.Contains(r, ".txt") {
 			return r, nil
 		}
 	}
@@ -126,13 +126,21 @@ func getMatchingString(cmds []string) (string, error) {
 	return "", errors.New("No matching string")
 }
 
-func getDirectoryName(cmds []string, matcher string) (string, error) {
+func getDirectoryName(cmds []string, matcher string) ([]string, error) {
+	// fmt.Println(cmds)
+	dirs := make([]string, 0)
 	for _, r := range cmds {
-		if strings.HasPrefix(r, "-") || strings.Contains(r, ".txt") || !(matcher == r) {
-			// fmt.Println(r)
-			return r, nil
+		// fmt.Println("outside condition:", r)
+		if !strings.HasPrefix(r, "-r") && !strings.Contains(r, ".txt") && !(matcher == r) {
+			// fmt.Println("inside condition", r)
+			// return r, nil
+			dirs = append(dirs, r)
 		}
+		// fmt.Println(dirs)
+	}
+	if len(dirs) == 0 {
+		return nil, errors.New("No matching string")
 	}
 
-	return "", errors.New("No matching string")
+	return dirs, nil
 }
