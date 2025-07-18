@@ -8,7 +8,6 @@ import (
 )
 
 func main() {
-	// fmt.Println("ehllo")
 	cmds := os.Args
 
 	if len(cmds) < 3 {
@@ -22,57 +21,34 @@ func main() {
 		fmt.Println("Please give a matcing string")
 		return
 	}
-	hasFile := true
-	hasDir := true
-	hasPara := true
-	fileName, err := getFileName(cmds[1:])
-	if err != nil {
-		hasFile = false
-	}
-	var dirName []string
-	if !hasFile {
-		dirName, err = getDirectoryName(cmds[1:], matcher)
-		if err != nil {
-			hasDir = false
-		}
-	}
-	if !hasDir && !hasFile {
-		fmt.Println("Does not have file or director name")
-		return
-	}
+
+	var paths []string
+
+	paths, err = getDirectoryName(cmds[1:], matcher)
 
 	para, err := getCommands(cmds[1:])
-	if err != nil {
-		hasPara = false
+	fmt.Println("Directory", paths)
+	printDirOrFile(paths)
+	fmt.Println("Parameter", para)
+	if len(para) == 0 {
+		traverseFiles(matcher, paths)
+		// printMatchingLines(matcher,)
 	}
-	fmt.Println("Directory", dirName)
-	fmt.Println("Filename", fileName)
-	// fmt.Println("Parameters", para, hasPara)
-
-	if hasFile && !hasPara {
-		if printMatchingLines(matcher, fileName) != nil {
-			fmt.Println("Error in printing")
-			return
-		}
-	} else if hasDir && hasPara {
-		if traverseAndPrint(dirName, para) != nil {
-			fmt.Println("Error in printing")
-			return
-		}
-	} else {
-		fmt.Println("Incorrect parameters")
-		return
-	}
-
-	// fmt.Println(matcher)
-	// fmt.Println(fileName)
-	// if printMatchingLines(matcher, fileName) != nil {
-	// 	fmt.Println("Error in printing")
-	// 	return
-	// }
 }
 
-func traverseAndPrint(dir []string, para []string) error {
+func traverseFiles(matcher string, fileNames []string) error {
+	for _, r := range fileNames {
+		isDir, err := isDir(r)
+		if err != nil || isDir {
+			return errors.New("File error")
+		}
+		printMatchingLines(matcher, r)
+	}
+	return nil
+}
+
+func traversePath(paths []string) error {
+
 	return nil
 }
 
@@ -88,19 +64,10 @@ func printMatchingLines(matcher, fileName string) error {
 	// fmt.Println(len(lines))
 	for _, r := range lines[:len(lines)-1] {
 		if strings.Contains(r, matcher) {
-			fmt.Println(r)
+			fmt.Println(fileName, " : ", r)
 		}
 	}
 	return nil
-}
-
-func getFileName(cmds []string) (string, error) {
-	for _, r := range cmds {
-		if strings.Contains(r, ".txt") {
-			return r, nil
-		}
-	}
-	return "", errors.New("Could not find text file")
 }
 
 func getCommands(cmds []string) ([]string, error) {
@@ -131,7 +98,7 @@ func getDirectoryName(cmds []string, matcher string) ([]string, error) {
 	dirs := make([]string, 0)
 	for _, r := range cmds {
 		// fmt.Println("outside condition:", r)
-		if !strings.HasPrefix(r, "-r") && !strings.Contains(r, ".txt") && !(matcher == r) {
+		if !strings.HasPrefix(r, "-r") && !(matcher == r) {
 			// fmt.Println("inside condition", r)
 			// return r, nil
 			dirs = append(dirs, r)
@@ -143,4 +110,23 @@ func getDirectoryName(cmds []string, matcher string) ([]string, error) {
 	}
 
 	return dirs, nil
+}
+
+func isDir(path string) (bool, error) {
+	fileInfo, err := os.Stat(path)
+	if err != nil {
+		return false, err
+	}
+	return fileInfo.IsDir(), err
+}
+
+func printDirOrFile(path []string) {
+	for _, r := range path {
+		isDir, err := isDir(r)
+		if err != nil {
+			fmt.Println(err.Error())
+			return
+		}
+		fmt.Println(r, isDir)
+	}
 }
