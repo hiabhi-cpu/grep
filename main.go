@@ -16,7 +16,7 @@ func main() {
 	}
 	// fmt.Println(len(cmds))
 	matcher, err := getMatchingString(cmds[1:])
-	fmt.Println("Matcher:", matcher)
+	// fmt.Println("Matcher:", matcher)
 	if err != nil {
 		fmt.Println("Please give a matcing string")
 		return
@@ -27,12 +27,19 @@ func main() {
 	paths, err = getDirectoryName(cmds[1:], matcher)
 
 	para, err := getCommands(cmds[1:])
-	fmt.Println("Directory", paths)
-	printDirOrFile(paths)
-	fmt.Println("Parameter", para)
+	// fmt.Println("Directory", paths)
+	// printDirOrFile(paths)
+	// fmt.Println("Parameter", para)
 	if len(para) == 0 {
 		traverseFiles(matcher, paths)
+		return
 		// printMatchingLines(matcher,)
+	}
+	for _, r := range para {
+		if r == "-r" {
+			// fmt.Println("in -r command")
+			traversePath(matcher, paths)
+		}
 	}
 }
 
@@ -47,9 +54,48 @@ func traverseFiles(matcher string, fileNames []string) error {
 	return nil
 }
 
-func traversePath(paths []string) error {
+func traversePath(matcher string, paths []string) error {
+	// fmt.Println("Paths func got :", paths)
+	for _, r := range paths {
+		dir, err := isDir(r)
+		// fmt.Println(r, dir, err)
+		if err != nil && dir {
+			return err
+		}
+		// fmt.Println("Is dir", r, dir)
+		if dir {
+			// fmt.Println("For dir:", r)
+			newPath, err := getFilesInDir(r)
+			if err != nil {
+				return err
+			}
+			// fmt.Println("New path", newPath)
+			err = traversePath(matcher, newPath)
+			if err != nil {
+				return err
+			}
+		} else {
+			// fmt.Println("for file", r)
+			err = printMatchingLines(matcher, r)
+			if err != nil {
+				return err
+			}
+		}
 
+	}
 	return nil
+}
+
+func getFilesInDir(path string) ([]string, error) {
+	newPathsString := make([]string, 0)
+	newPaths, err := os.ReadDir(path)
+	if err != nil {
+		return nil, err
+	}
+	for _, r := range newPaths {
+		newPathsString = append(newPathsString, fmt.Sprint(path, "/", r.Name()))
+	}
+	return newPathsString, nil
 }
 
 func printMatchingLines(matcher, fileName string) error {
@@ -117,7 +163,7 @@ func isDir(path string) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	return fileInfo.IsDir(), err
+	return fileInfo.IsDir(), nil
 }
 
 func printDirOrFile(path []string) {
